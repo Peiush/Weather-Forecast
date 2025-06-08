@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dynamic Weather App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(to right, #56ccf2, #2f80ed);
+      background-size: cover;
+      background-position: center;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: background 0.5s ease-in-out;
+    }
+
+    .box {
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+    }
+
+    h2 {
+      color: #2f80ed;
+      margin-bottom: 20px;
+    }
+
+    .search-box input {
+      padding: 12px;
+      font-size: 16px;
+      width: 80%;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      outline: none;
+      transition: 0.3s;
+    }
+
+    .search-box input:focus {
+      border-color: #2f80ed;
+    }
+
+    .Gen-btn button {
+      margin-top: 20px;
+      padding: 12px 30px;
+      background-color: #2f80ed;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .Gen-btn button:hover {
+      background-color: #1c6cd6;
+    }
+
+    .result {
+      margin-top: 25px;
+      font-size: 18px;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .weather-icon {
+      width: 80px;
+      height: 80px;
+      margin: 10px auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>🌤️ Today's Weather</h2>
+    <div class="search-box">
+      <input type="text" class="City_search" placeholder="Enter your city name" />
+    </div>
+    <div class="Gen-btn">
+      <button>Search</button>
+    </div>
+    <div class="result"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.6.7/dist/axios.min.js"></script>
+  <script>
+    const geoURL = "https://api.openweathermap.org/geo/1.0/direct";
+    const weatherURL = "https://api.openweathermap.org/data/2.5/weather";
+    const APIkey = "b50f6e8f6f361bf781389124842f57f6";
+
+    function setBackground(weatherMain) {
+      const body = document.body;
+      const backgrounds = {
+        Clear: "url('https://images.unsplash.com/photo-1501973801540-537f08ccae7b')",
+        Clouds: "url('https://images.unsplash.com/photo-1504384308090-c894fdcc538d')",
+        Rain: "url('https://images.unsplash.com/photo-1523413651479-597eb2da0ad6')",
+        Snow: "url('https://images.unsplash.com/photo-1608889175119-1137c2e53b3a')",
+        Thunderstorm: "url('https://images.unsplash.com/photo-1515516969-df7e4cf4f3f7')",
+        Drizzle: "url('https://images.unsplash.com/photo-1501594907352-04cda38ebc29')",
+        Mist: "url('https://images.unsplash.com/photo-1523867576354-0f5a9c3b6f03')",
+        Haze: "url('https://images.unsplash.com/photo-1508261300700-f209d4b4781b')",
+        Smoke: "url('https://images.unsplash.com/photo-1604079627044-4f2c0ec4d1cc')",
+        Fog: "url('https://images.unsplash.com/photo-1549924231-f129b911e442')",
+        Dust: "url('https://images.unsplash.com/photo-1532298488760-970ff6decf61')",
+        Sand: "url('https://images.unsplash.com/photo-1553810725-230268ab98e6')"
+      };
+
+      body.style.backgroundImage = backgrounds[weatherMain] || "linear-gradient(to right, #56ccf2, #2f80ed)";
+      body.style.backgroundSize = "cover";
+      body.style.backgroundPosition = "center";
+    }
+
+    document.querySelector("button").addEventListener("click", async () => {
+      const city = document.querySelector(".City_search").value.trim();
+      const resultDiv = document.querySelector(".result");
+      if (!city) {
+        resultDiv.innerHTML = "<p>Please enter a city name.</p>";
+        return;
+      }
+      resultDiv.innerHTML = "<p>Loading...</p>";
+      try {
+        const geoRes = await axios.get(geoURL, {
+          params: { q: city, limit: 1, appid: APIkey },
+        });
+
+        if (geoRes.data.length === 0) {
+          resultDiv.innerHTML = "<p>City not found.</p>";
+          return;
+        }
+
+        const { lat, lon, name, country } = geoRes.data[0];
+        const weatherRes = await axios.get(weatherURL, {
+          params: { lat, lon, appid: APIkey, units: "metric" },
+        });
+
+        const weather = weatherRes.data;
+        const temp = weather.main.temp;
+        const feels = weather.main.feels_like;
+        const desc = weather.weather[0].description;
+        const icon = weather.weather[0].icon;
+        const humidity = weather.main.humidity;
+        const wind = weather.wind.speed;
+        const weatherMain = weather.weather[0].main;
+
+        setBackground(weatherMain);
+
+        resultDiv.innerHTML = `
+          <h3>${name}, ${country}</h3>
+          <img class="weather-icon" src="https://openweathermap.org/img/wn/${icon}@2x.png" alt="weather icon">
+          <p><strong>Temperature:</strong> ${temp}°C</p>
+          <p><strong>Feels Like:</strong> ${feels}°C</p>
+          <p><strong>Condition:</strong> ${desc}</p>
+          <p><strong>Humidity:</strong> ${humidity}%</p>
+          <p><strong>Wind Speed:</strong> ${wind} m/s</p>
+        `;
+      } catch (error) {
+        console.error(error);
+        resultDiv.innerHTML = "<p>Error fetching weather data. Please try again later.</p>";
+      }
+    });
+  </script>
+</body>
+</html>
